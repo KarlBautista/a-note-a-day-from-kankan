@@ -1,0 +1,24 @@
+.main-page{
+    width: 100%;
+    min-height: 100vh;
+    background: linear-gradient(to bottom, #FFF0F5, #FFE8EE);
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+h1{
+    font-family: Georgia, 'Times New Roman', Times, serif;
+    color: #D32F45;
+    margin-top: 40px;
+    text-align: center;
+}
+ h2 {
+      font-family: 'Georgia', serif;
+      font-size: 1rem;
+      color: #FF6B81;
+      font-weight: normal;
+      text-align: center;
+      margin-bottom: 40px;
+ }

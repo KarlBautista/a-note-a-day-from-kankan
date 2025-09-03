@@ -1,17 +1,114 @@
-import React from 'react'
-import "../styles/MainPage.css"
-import NoteCard from './NoteCard'
+import React, { useState, useEffect } from 'react';
+import "../styles/MainPage.css";
+import NoteCard from './NoteCard';
+import { initializeApp } from "firebase/app";
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import axios from "axios"; 
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCQVtUDOUoZO896lQT_O6OZ5M-XExRsrBQ",
+  authDomain: "a-note-a-day-from-kankan.firebaseapp.com",
+  projectId: "a-note-a-day-from-kankan",
+  storageBucket: "a-note-a-day-from-kankan.firebasestorage.app",
+  messagingSenderId: "134290037292",
+  appId: "1:134290037292:web:69e275038692272fa48f89",
+  measurementId: "G-L5MSMDE4HD"
+};
+
+const app = initializeApp(firebaseConfig);
+const messaging = getMessaging(app);
+
 const MainPage = () => {
+  const [notificationPerm, setNotificationPerm] = useState("");
+    const [fcmToken, setFcmToken] = useState(""); // ✅ store token in state
+
+  useEffect(() => {
+    if (Notification.permission === "granted") {
+      getToken(messaging, {
+        vapidKey: "BNk3jZlY8b_kSxdXCVaoVehx_tWygsxDRuP6YMNH-8-N4bfQHacnsI3cKq3-LOx2hIMBDFSu_zqI3OySLH2y5q0"
+      }).then((token) => {
+        if (token) {
+          setNotificationPerm("enabled");
+        }
+      });
+    }
+  }, []);
+
+
+const requestPermission = async () => {
+  const permission = await Notification.requestPermission();
+  if (permission === "granted") {
+    try {
+      const token = await getToken(messaging, {
+        vapidKey: "BNk3jZlY8b_kSxdXCVaoVehx_tWygsxDRuP6YMNH-8-N4bfQHacnsI3cKq3-LOx2hIMBDFSu_zqI3OySLH2y5q0"
+      });
+
+      if (!token) return;
+
+      console.log("FCM Token:", token);
+      setFcmToken(token); 
+
+      const res = await axios.post("http://localhost:4000/save-token", { token });
+      if (res.data.success) setNotificationPerm("enabled");
+
+      // Optional: send test notification
+      await axios.post("http://localhost:4000/send-notification", {
+        title: "Hello Ganinggg!",
+        body: "You enabled the notifications po ha, anytimee p'wede mo naman 'tong i-disable. Love youu poo.💌"
+      });
+    } catch (err) {
+      console.error("Failed to get token", err);
+    }
+  }
+};
+  const disableNotifications = async () => {
+    console.log(fcmToken)
+    try {
+      if (!fcmToken) return; // ✅ use token from state
+
+      await axios.post("http://localhost:4000/delete-token", { token: fcmToken });
+      setNotificationPerm("disabled");
+      setFcmToken(""); // clear token
+      new Notification("You disabled the notification🥲")
+    } catch (err) {
+      console.error("Failed to disable notifications", err);
+    }
+  };
+
+
+  onMessage(messaging, (payload) => {
+    console.log("Foreground message received:", payload);
+    new Notification(payload.notification.title, {
+      body: payload.notification.body
+    });
+  });
+
   return (
     <div className='main-page'>
-        <h1>♡ A Note a Day From Kankan ♡</h1>
-        <h2>Because every day with you ganing is special</h2>
-        <NoteCard />
-
-         <footer>♡ Made with love for the love of my life ♡</footer>
+      <div className='content-container'>
+        <header className='header-section'>
+          <h1>♡ A Note a Day For Angila ♡</h1>
+          <h2>Because every day with you ganing is special</h2>
+        </header>
+        
+        <main className='main-content'>
+          <NoteCard />
+        </main>
+        
+        <section className='notification-section'>
+          {notificationPerm === "enabled" && (
+            <p id='notification-label'>💌 You will now get a notification everydayyy, ganingg! 💌</p>
+          )}
+          
+          <button onClick={notificationPerm === "enabled" ? disableNotifications : requestPermission}>
+            {notificationPerm === "enabled" ? "Disable Notifications 😢" : "Enable Notifications"}
+          </button>
+        </section>
+      </div>
       
+      <footer>♡ Made with love for the love of my life ♡</footer>
     </div>
-  )
-}
+  );
+};
 
-export default MainPage
+export default MainPage;

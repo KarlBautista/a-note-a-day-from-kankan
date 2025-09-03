@@ -12,6 +12,12 @@ export const NotesProvider = ({ children }) => {
     const [ todaysNote, setTodaysNote ]= useState("");
     const [ today, setToday ] = useState("");
 
+
+
+ 
+
+
+
  const fetchNotes = async () => {
         const { data, error } = await supabase.from("notes").select("*");
         if(error) throw error;
@@ -36,7 +42,8 @@ export const NotesProvider = ({ children }) => {
         console.log(index);
         const note = notes[index];
         if(note && note.message){
-            setTodaysNote(note.message)
+            setTodaysNote(note.message);
+         
         }
 
        setToday(formatDate(today));
@@ -45,6 +52,9 @@ export const NotesProvider = ({ children }) => {
 
       console.log(todaysNote)
     
+
+    
+
     const formatDate = (date) => {
         const day = date.getDate();
         const month = date.toLocaleString("default", { month: "long" }); // "August"
@@ -55,7 +65,8 @@ export const NotesProvider = ({ children }) => {
    const value = {
     notes,
     todaysNote,
-    today
+    today,
+  
    }
 
    return(

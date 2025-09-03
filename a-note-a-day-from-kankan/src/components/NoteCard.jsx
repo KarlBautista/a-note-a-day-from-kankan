@@ -6,10 +6,6 @@ const NoteCard = () => {
     const { todaysNote, today} = useNotesContext();
 
 
-
-    
- 
-
   return (
     <div className='note-card'>
         <div className="date-container">

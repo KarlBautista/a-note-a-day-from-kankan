@@ -11,8 +11,11 @@ const app = express();
 const PORT = 4000;
 
 app.use(cors({
-  origin: "https://a-note-a-day-for-angila.onrender.com"
+  origin: "https://a-note-a-day-from-kankan.vercel.app",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
 }));
+
 app.use(express.json());
 
 admin.initializeApp({

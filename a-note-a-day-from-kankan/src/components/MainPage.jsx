@@ -75,12 +75,15 @@ const requestPermission = async () => {
 
       const res = await axios.post("https://a-note-a-day-for-angila.onrender.com/save-token", { token });
       if (res.data.success) setNotificationPerm("enabled");
-      setTimeout( async () => {
+       new Notification("Hello Ganinggg!", {
+        body: "You enabled the notifications po ha, anytimee p'wede mo naman 'tong i-disable. Love youu poo.💌"
+      });
+   
          await axios.post("https://a-note-a-day-for-angila.onrender.com/send-notification", {
         title: "Hello Ganinggg!",
         body: "You enabled the notifications po ha, anytimee p'wede mo naman 'tong i-disable. Love youu poo.💌"
       });
-      }, 1000)
+  
      
     } catch (err) {
       console.error("Failed to get token", err);

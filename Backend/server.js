@@ -80,41 +80,40 @@ app.post("/delete-token", async (req, res) => {
 
 
 
+// Manual notification endpoint (still works)
 app.post("/send-notification", async (req, res) => {
   const { title, body } = req.body;
 
-  try {
-    const { data: tokenData, error: tokenError } = await supabase.from("FCM").select("*");
-    if (tokenError) {
-      return res.status(500).json({ success: false, error: tokenError });
-    }
-
-    if (!tokenData || tokenData.length === 0) {
-      return res.status(200).json({ success: false, message: "No tokens to send notifications." });
-    }
-
+  try{
     let successCount = 0;
+    const { data: tokenData, error: tokenError } = await supabase.from("FCM").select("*");
+    if(tokenError){
+      res.status(500).json({ success: false, error: tokenError });
+    }
 
-    for (const row of tokenData) {
-      try {
-        await admin.messaging().send({
-          notification: { title, body },
-          token: row.FCM
-        });
-        successCount++;
-      } catch (sendErr) {
-        console.error("Failed to send to token:", row.FCM, sendErr);
-      }
+     for (const row of tokenData) {
+      await admin.messaging().send({
+        notification: { title, body },
+        token: row.FCM
+      });
+      successCount++;
     }
 
     console.log("Notification sent:", successCount);
     res.json({ success: true, sent: successCount });
-  } catch (err) {
-    console.error("Unexpected error in /send-notification:", err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
 
+    console.error(err);
+    res.status(500).json({ success: false, error: err.message });
+    
+  } catch(err){
+    res.status(500).json({ success: false, error: err });
+  }
+
+
+
+   
+  
+});
 
 cron.schedule("58 2 * * *", async () => {
   console.log("Running scheduled notification (2:58 AM)...");

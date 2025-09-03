@@ -62,34 +62,36 @@ const requestPermission = async () => {
   const permission = await Notification.requestPermission();
   if (permission === "granted") {
     try {
-      const registration = await navigator.serviceWorker.getRegistration();
+      // Register SW
+      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      console.log('Service Worker registered:', registration);
+
+      // Get FCM token
       const token = await getToken(messaging, {
         vapidKey: "BNk3jZlY8b_kSxdXCVaoVehx_tWygsxDRuP6YMNH-8-N4bfQHacnsI3cKq3-LOx2hIMBDFSu_zqI3OySLH2y5q0",
         serviceWorkerRegistration: registration
       });
 
       if (!token) return;
-
       console.log("FCM Token:", token);
       setFcmToken(token);
 
+      // Save token to server
       const res = await axios.post("https://a-note-a-day-for-angila.onrender.com/save-token", { token });
       if (res.data.success) setNotificationPerm("enabled");
-       new Notification("Hello Ganinggg!", {
-        body: "You enabled the notifications po ha, anytimee p'wede mo naman 'tong i-disable. Love youu poo.💌"
-      });
-   
-         await axios.post("https://a-note-a-day-for-angila.onrender.com/send-notification", {
+
+      // Send immediate notification (for testing)
+      await axios.post("https://a-note-a-day-for-angila.onrender.com/send-notification", {
         title: "Hello Ganinggg!",
-        body: "You enabled the notifications po ha, anytimee p'wede mo naman 'tong i-disable. Love youu poo.💌"
+        body: "You enabled notifications! 💌"
       });
-  
-     
+
     } catch (err) {
-      console.error("Failed to get token", err);
+      console.error("Failed to get token or send notification:", err);
     }
   }
 };
+
 
   const disableNotifications = async () => {
     console.log(fcmToken)
@@ -106,12 +108,13 @@ const requestPermission = async () => {
   };
 
 
-  onMessage(messaging, (payload) => {
-    console.log("Foreground message received:", payload);
-    new Notification(payload.notification.title, {
-      body: payload.notification.body
-    });
+ onMessage(messaging, (payload) => {
+  console.log("Foreground message received:", payload);
+  new Notification(payload.notification?.title, {
+    body: payload.notification?.body
   });
+});
+
 
   return (
     <div className='main-page'>

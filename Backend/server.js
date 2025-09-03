@@ -10,7 +10,9 @@ const admin = require("firebase-admin");
 const app = express();
 const PORT = 4000;
 
-app.use(cors());
+app.use(cors({
+  origin: "https://a-note-a-day-for-angila.onrender.com"
+}));
 app.use(express.json());
 
 admin.initializeApp({

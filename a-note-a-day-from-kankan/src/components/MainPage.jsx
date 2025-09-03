@@ -48,11 +48,11 @@ const requestPermission = async () => {
       console.log("FCM Token:", token);
       setFcmToken(token); 
 
-      const res = await axios.post("http://localhost:4000/save-token", { token });
+      const res = await axios.post("https://a-note-a-day-for-angila.onrender.com/save-token", { token });
       if (res.data.success) setNotificationPerm("enabled");
 
       // Optional: send test notification
-      await axios.post("http://localhost:4000/send-notification", {
+      await axios.post("https://a-note-a-day-for-angila.onrender.com/send-notification", {
         title: "Hello Ganinggg!",
         body: "You enabled the notifications po ha, anytimee p'wede mo naman 'tong i-disable. Love youu poo.💌"
       });
@@ -66,7 +66,7 @@ const requestPermission = async () => {
     try {
       if (!fcmToken) return; // ✅ use token from state
 
-      await axios.post("http://localhost:4000/delete-token", { token: fcmToken });
+      await axios.post("https://a-note-a-day-for-angila.onrender.com/delete-token", { token: fcmToken });
       setNotificationPerm("disabled");
       setFcmToken(""); // clear token
       new Notification("You disabled the notification🥲")

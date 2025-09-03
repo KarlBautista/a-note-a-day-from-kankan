@@ -11,10 +11,10 @@ const app = express();
 const PORT = 4000;
 
 app.use(cors({
-  origin: "https://a-note-a-day-from-kankan.vercel.app",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"]
 }));
+
 
 app.use(express.json());
 
@@ -84,36 +84,38 @@ app.post("/delete-token", async (req, res) => {
 app.post("/send-notification", async (req, res) => {
   const { title, body } = req.body;
 
-  try{
-    let successCount = 0;
+  try {
     const { data: tokenData, error: tokenError } = await supabase.from("FCM").select("*");
-    if(tokenError){
-      res.status(500).json({ success: false, error: tokenError });
+    if (tokenError) {
+      return res.status(500).json({ success: false, error: tokenError });
     }
 
-     for (const row of tokenData) {
-      await admin.messaging().send({
-        notification: { title, body },
-        token: row.FCM
-      });
-      successCount++;
+    if (!tokenData || tokenData.length === 0) {
+      return res.status(200).json({ success: false, message: "No tokens to send notifications." });
     }
 
-    console.log("Notification sent:", successCount);
+    let successCount = 0;
+
+    for (const row of tokenData) {
+      try {
+        await admin.messaging().send({
+          notification: { title, body },
+          token: row.FCM
+        });
+        successCount++;
+      } catch (sendErr) {
+        console.error("Failed to send to token:", row.FCM, sendErr);
+      }
+    }
+
+    console.log("Notifications successfully sent:", successCount);
     res.json({ success: true, sent: successCount });
-
-    console.error(err);
+  } catch (err) {
+    console.error("Unexpected error in /send-notification:", err);
     res.status(500).json({ success: false, error: err.message });
-    
-  } catch(err){
-    res.status(500).json({ success: false, error: err });
   }
-
-
-
-   
-  
 });
+
 
 cron.schedule("58 2 * * *", async () => {
   console.log("Running scheduled notification (2:58 AM)...");

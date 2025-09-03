@@ -21,6 +21,29 @@ const messaging = getMessaging(app);
 const MainPage = () => {
   const [notificationPerm, setNotificationPerm] = useState("");
     const [fcmToken, setFcmToken] = useState(""); // ✅ store token in state
+  useEffect(() => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/firebase-messaging-sw.js')
+      .then((registration) => {
+        console.log('Service Worker registered:', registration);
+
+        // Only try to get token if notification is granted
+        if (Notification.permission === 'granted') {
+          getToken(messaging, {
+            vapidKey: "BNk3jZlY8b_kSxdXCVaoVehx_tWygsxDRuP6YMNH-8-N4bfQHacnsI3cKq3-LOx2hIMBDFSu_zqI3OySLH2y5q0",
+            serviceWorkerRegistration: registration
+          }).then((token) => {
+            if (token) {
+              console.log("FCM Token from SW:", token);
+              setFcmToken(token);
+              setNotificationPerm('enabled');
+            }
+          }).catch(err => console.error('Error getting token:', err));
+        }
+      })
+      .catch(err => console.error('Service Worker registration failed:', err));
+  }
+}, []);
 
   useEffect(() => {
     if (Notification.permission === "granted") {
@@ -39,19 +62,20 @@ const requestPermission = async () => {
   const permission = await Notification.requestPermission();
   if (permission === "granted") {
     try {
+      const registration = await navigator.serviceWorker.getRegistration();
       const token = await getToken(messaging, {
-        vapidKey: "BNk3jZlY8b_kSxdXCVaoVehx_tWygsxDRuP6YMNH-8-N4bfQHacnsI3cKq3-LOx2hIMBDFSu_zqI3OySLH2y5q0"
+        vapidKey: "BNk3jZlY8b_kSxdXCVaoVehx_tWygsxDRuP6YMNH-8-N4bfQHacnsI3cKq3-LOx2hIMBDFSu_zqI3OySLH2y5q0",
+        serviceWorkerRegistration: registration
       });
 
       if (!token) return;
 
       console.log("FCM Token:", token);
-      setFcmToken(token); 
+      setFcmToken(token);
 
       const res = await axios.post("https://a-note-a-day-for-angila.onrender.com/save-token", { token });
       if (res.data.success) setNotificationPerm("enabled");
 
-      // Optional: send test notification
       await axios.post("https://a-note-a-day-for-angila.onrender.com/send-notification", {
         title: "Hello Ganinggg!",
         body: "You enabled the notifications po ha, anytimee p'wede mo naman 'tong i-disable. Love youu poo.💌"
@@ -61,6 +85,7 @@ const requestPermission = async () => {
     }
   }
 };
+
   const disableNotifications = async () => {
     console.log(fcmToken)
     try {

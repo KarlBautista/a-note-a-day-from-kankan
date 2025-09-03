@@ -22,7 +22,7 @@ admin.initializeApp({
 console.log("Firebase Admin initialized");
 
 let tokens = [];
-
+  
 app.post("/save-token", async (req, res) => {
   const { token } = req.body;
 

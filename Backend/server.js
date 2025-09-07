@@ -5,8 +5,28 @@ import { createRequire } from "module";
 import cron from "node-cron"; // 👈 install this: npm install node-cron
 import { supabase } from "./database/supabaseClient.js"
 const require = createRequire(import.meta.url);
-const serviceAccount = require("./serviceAccount.json");
 const admin = require("firebase-admin");
+let serviceAccount = null;
+
+// Prefer credentials from environment for Render/hosting
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+  try {
+    serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    console.log("Using Firebase Admin credentials from env");
+  } catch (e) {
+    console.error("Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON env", e);
+  }
+}
+
+// Fallback to local file during development
+if (!serviceAccount) {
+  try {
+    serviceAccount = require("./serviceAccount.json");
+    console.log("Using Firebase Admin credentials from local file");
+  } catch (e) {
+    console.error("No valid Firebase Admin credentials found.");
+  }
+}
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -22,9 +42,13 @@ app.use(cors({
 
 app.use(express.json());
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+if (serviceAccount) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+} else {
+  throw new Error("Firebase Admin credentials are missing. Set GOOGLE_APPLICATION_CREDENTIALS_JSON or provide serviceAccount.json");
+}
 
 console.log("Firebase Admin initialized");
 

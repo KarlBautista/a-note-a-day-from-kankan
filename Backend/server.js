@@ -137,11 +137,10 @@ app.post("/send-notification", async (req, res) => {
       try {
           await admin.messaging().send({
       token: row.FCM,
-      notification: {
-        title: title || "💌 A Note from Kankan",
-        body: body || "You have a new message!"
-      },
+      // Send data-only so client/Service Worker controls display in all cases
       data: {
+        title: title || "💌 A Note from Kankan",
+        body: body || "You have a new message!",
         click_action: "FLUTTER_NOTIFICATION_CLICK",
         url: FRONTEND_URL
       },
@@ -238,11 +237,9 @@ cron.schedule(
         try {
           await admin.messaging().send({
             token: row.FCM,
-            notification: {
-              title: scheduledTitle,
-              body: scheduledBody
-            },
             data: {
+              title: scheduledTitle,
+              body: scheduledBody,
               click_action: "FLUTTER_NOTIFICATION_CLICK",
               url: FRONTEND_URL
             },

@@ -156,8 +156,8 @@ onMessage(messaging, async (payload) => {
     if (registration && registration.active) {
       registration.active.postMessage({
         type: 'SHOW_NOTIFICATION',
-        title: payload.notification?.title || '💌 A Note from Kankan',
-        body: payload.notification?.body || 'You have a new message!',
+        title: payload.data?.title || payload.notification?.title || '💌 A Note from Kankan',
+        body: payload.data?.body || payload.notification?.body || 'You have a new message!',
         options: {
           icon: '/vite.svg',
           badge: '/vite.svg',
@@ -165,8 +165,8 @@ onMessage(messaging, async (payload) => {
         }
       });
     } else if (Notification.permission === 'granted') {
-      new Notification(payload.notification?.title || '💌 A Note from Kankan', {
-        body: payload.notification?.body || 'You have a new message!',
+      new Notification(payload.data?.title || payload.notification?.title || '💌 A Note from Kankan', {
+        body: payload.data?.body || payload.notification?.body || 'You have a new message!',
         icon: '/vite.svg'
       });
     }

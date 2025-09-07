@@ -16,10 +16,11 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function(payload) {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  
-  const notificationTitle = payload.notification.title || 'New Message';
+
+  // Prefer data payload so we control display in all cases
+  const notificationTitle = (payload.data && payload.data.title) || (payload.notification && payload.notification.title) || 'New Message';
   const notificationOptions = {
-    body: payload.notification.body || 'You have a new message',
+    body: (payload.data && payload.data.body) || (payload.notification && payload.notification.body) || 'You have a new message',
     icon: '/vite.svg',
     badge: '/vite.svg',
     tag: 'love-note',
@@ -32,7 +33,7 @@ messaging.onBackgroundMessage(function(payload) {
       }
     ],
     data: {
-      url: self.location.origin
+      url: (payload.data && payload.data.url) || self.location.origin
     }
   };
 

@@ -21,7 +21,6 @@ const messaging = getMessaging(app);
 const MainPage = () => {
   const [notificationPerm, setNotificationPerm] = useState("");
     const [fcmToken, setFcmToken] = useState(""); // ✅ store token in state
-<<<<<<< HEAD
 useEffect(() => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/firebase-messaging-sw.js')
@@ -49,8 +48,6 @@ useEffect(() => {
   }
 }, []);
 
-=======
->>>>>>> 715cf9ff (added firebase cloud messaging functionality, service workers, backend express and improved the stylings)
 
   useEffect(() => {
     if (Notification.permission === "granted") {
@@ -69,7 +66,6 @@ const requestPermission = async () => {
   const permission = await Notification.requestPermission();
   if (permission === "granted") {
     try {
-<<<<<<< HEAD
       // Register SW
       const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
       console.log('Service Worker registered:', registration);
@@ -149,46 +145,10 @@ const requestPermission = async () => {
       }
     } catch (err) {
       console.error("❌ Failed to disable notifications:", err);
-=======
-      const token = await getToken(messaging, {
-        vapidKey: "BNk3jZlY8b_kSxdXCVaoVehx_tWygsxDRuP6YMNH-8-N4bfQHacnsI3cKq3-LOx2hIMBDFSu_zqI3OySLH2y5q0"
-      });
-
-      if (!token) return;
-
-      console.log("FCM Token:", token);
-      setFcmToken(token); 
-
-      const res = await axios.post("http://localhost:4000/save-token", { token });
-      if (res.data.success) setNotificationPerm("enabled");
-
-      // Optional: send test notification
-      await axios.post("http://localhost:4000/send-notification", {
-        title: "Hello Ganinggg!",
-        body: "You enabled the notifications po ha, anytimee p'wede mo naman 'tong i-disable. Love youu poo.💌"
-      });
-    } catch (err) {
-      console.error("Failed to get token", err);
-    }
-  }
-};
-  const disableNotifications = async () => {
-    console.log(fcmToken)
-    try {
-      if (!fcmToken) return; // ✅ use token from state
-
-      await axios.post("http://localhost:4000/delete-token", { token: fcmToken });
-      setNotificationPerm("disabled");
-      setFcmToken(""); // clear token
-      new Notification("You disabled the notification🥲")
-    } catch (err) {
-      console.error("Failed to disable notifications", err);
->>>>>>> 715cf9ff (added firebase cloud messaging functionality, service workers, backend express and improved the stylings)
     }
   };
 
 
-<<<<<<< HEAD
 onMessage(messaging, (payload) => {
   console.log("Foreground message received:", payload);
   if (payload.notification) {
@@ -197,14 +157,6 @@ onMessage(messaging, (payload) => {
 });
 
 
-=======
-  onMessage(messaging, (payload) => {
-    console.log("Foreground message received:", payload);
-    new Notification(payload.notification.title, {
-      body: payload.notification.body
-    });
-  });
->>>>>>> 715cf9ff (added firebase cloud messaging functionality, service workers, backend express and improved the stylings)
 
   return (
     <div className='main-page'>

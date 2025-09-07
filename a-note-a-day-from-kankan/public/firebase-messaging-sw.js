@@ -14,7 +14,6 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-<<<<<<< HEAD
 messaging.onBackgroundMessage(function(payload) {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
   
@@ -35,20 +34,10 @@ messaging.onBackgroundMessage(function(payload) {
     data: {
       url: self.location.origin
     }
-=======
-// Handle background messages
-messaging.onBackgroundMessage(function(payload) {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  const notificationTitle = payload.notification.title;
-  const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/logo.png'
->>>>>>> 715cf9ff (added firebase cloud messaging functionality, service workers, backend express and improved the stylings)
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
-<<<<<<< HEAD
 
 // Handle notification clicks
 self.addEventListener('notificationclick', function(event) {
@@ -76,5 +65,3 @@ self.addEventListener('notificationclick', function(event) {
     );
   }
 });
-=======
->>>>>>> 715cf9ff (added firebase cloud messaging functionality, service workers, backend express and improved the stylings)

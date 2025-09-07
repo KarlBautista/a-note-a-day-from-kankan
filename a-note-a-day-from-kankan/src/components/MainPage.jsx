@@ -107,10 +107,10 @@ const requestPermission = async () => {
         return;
       }
 
-      await axios.post("https://a-note-a-day-for-angila.onrender.com/delete-token", { token: fcmToken });
+      const response = await axios.post("https://a-note-a-day-for-angila.onrender.com/delete-token", { token: fcmToken });
       setNotificationPerm("disabled");
       setFcmToken(""); // clear token
-      
+      console.log(response.message);
       // For mobile browsers, we need to use service worker or FCM for notifications
       // Regular browser notifications might not work on mobile
       if ('serviceWorker' in navigator) {
@@ -149,10 +149,29 @@ const requestPermission = async () => {
   };
 
 
-onMessage(messaging, (payload) => {
+onMessage(messaging, async (payload) => {
   console.log("Foreground message received:", payload);
-  if (payload.notification) {
-    alert(`${payload.notification.title}\n${payload.notification.body}`);
+  try {
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (registration && registration.active) {
+      registration.active.postMessage({
+        type: 'SHOW_NOTIFICATION',
+        title: payload.notification?.title || '💌 A Note from Kankan',
+        body: payload.notification?.body || 'You have a new message!',
+        options: {
+          icon: '/vite.svg',
+          badge: '/vite.svg',
+          data: { url: window.location.origin }
+        }
+      });
+    } else if (Notification.permission === 'granted') {
+      new Notification(payload.notification?.title || '💌 A Note from Kankan', {
+        body: payload.notification?.body || 'You have a new message!',
+        icon: '/vite.svg'
+      });
+    }
+  } catch (e) {
+    console.error('Failed to show foreground notification', e);
   }
 });
 

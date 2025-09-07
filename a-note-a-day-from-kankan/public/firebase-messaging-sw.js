@@ -39,6 +39,27 @@ messaging.onBackgroundMessage(function(payload) {
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
+// Allow the page to request a notification even when it's in the foreground
+self.addEventListener('message', function(event) {
+  try {
+    const { type, title, body, options } = event.data || {};
+    if (type === 'SHOW_NOTIFICATION' && title) {
+      const notificationOptions = Object.assign({
+        body: body || '',
+        icon: '/vite.svg',
+        badge: '/vite.svg',
+        tag: 'love-note',
+        requireInteraction: true,
+        data: { url: self.location.origin }
+      }, options || {});
+
+      event.waitUntil(self.registration.showNotification(title, notificationOptions));
+    }
+  } catch (e) {
+    console.error('[firebase-messaging-sw.js] Failed to show foreground notification via message', e);
+  }
+});
+
 // Handle notification clicks
 self.addEventListener('notificationclick', function(event) {
   console.log('[firebase-messaging-sw.js] Notification clicked');

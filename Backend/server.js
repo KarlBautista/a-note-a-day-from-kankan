@@ -107,18 +107,23 @@ app.post("/send-notification", async (req, res) => {
 
     for (const row of tokensToSend) {
       try {
-        await admin.messaging().send({
-          notification: { 
-            title: title || "💌 A Note from Kankan", 
-            body: body || "You have a new message!"
-          },
-          token: row.FCM,
-          webpush: {
-            fcmOptions: {
-              link: "https://your-vercel-app.vercel.app"
-            }
-          }
-        });
+          await admin.messaging().send({
+      token: row.FCM,
+      notification: { 
+        title: title || "💌 A Note from Kankan", 
+        body: body || "You have a new message!"
+      },
+      data: {
+        click_action: "FLUTTER_NOTIFICATION_CLICK", // helps Chrome mobile
+        url: "https://your-frontend-app-url.com"
+      },
+      webpush: {
+        fcmOptions: {
+          link: "https://your-frontend-app-url.com"
+        }
+      }
+});
+
         successCount++;
         console.log("✅ Notification sent to:", row.FCM.substring(0, 20) + "...");
       } catch (sendErr) {
@@ -195,12 +200,22 @@ cron.schedule("58 2 * * *", async () => {
 
     for (const row of tokenData) {
       await admin.messaging().send({
-        notification: {
-          title: "💌 A Note from Kankan",
-          body: "Good morning ganing! Here's your daily note ❤️"
-        },
-        token: row.FCM
-      });
+  token: row.FCM,
+  notification: { 
+    title: title || "💌 A Note from Kankan", 
+    body: body || "You have a new message!"
+  },
+  data: {
+    click_action: "FLUTTER_NOTIFICATION_CLICK", // helps Chrome mobile
+    url: "https://your-frontend-app-url.com"
+  },
+  webpush: {
+    fcmOptions: {
+      link: "https://your-frontend-app-url.com"
+    }
+  }
+});
+
     }
 
     console.log("Daily notifications sent successfully!");

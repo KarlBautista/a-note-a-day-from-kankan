@@ -21,29 +21,33 @@ const messaging = getMessaging(app);
 const MainPage = () => {
   const [notificationPerm, setNotificationPerm] = useState("");
     const [fcmToken, setFcmToken] = useState(""); // ✅ store token in state
-  useEffect(() => {
+useEffect(() => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/firebase-messaging-sw.js')
-      .then((registration) => {
+      .then(async (registration) => {
         console.log('Service Worker registered:', registration);
 
-        // Only try to get token if notification is granted
-        if (Notification.permission === 'granted') {
-          getToken(messaging, {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          const token = await getToken(messaging, {
             vapidKey: "BNk3jZlY8b_kSxdXCVaoVehx_tWygsxDRuP6YMNH-8-N4bfQHacnsI3cKq3-LOx2hIMBDFSu_zqI3OySLH2y5q0",
             serviceWorkerRegistration: registration
-          }).then((token) => {
-            if (token) {
-              console.log("FCM Token from SW:", token);
-              setFcmToken(token);
-              setNotificationPerm('enabled');
-            }
-          }).catch(err => console.error('Error getting token:', err));
+          });
+
+          if (token) {
+            console.log("FCM Token:", token);
+            setFcmToken(token);
+            setNotificationPerm("enabled");
+
+            // Save token to server
+            await axios.post("https://a-note-a-day-for-angila.onrender.com/save-token", { token });
+          }
         }
       })
       .catch(err => console.error('Service Worker registration failed:', err));
   }
 }, []);
+
 
   useEffect(() => {
     if (Notification.permission === "granted") {
@@ -145,12 +149,13 @@ const requestPermission = async () => {
   };
 
 
- onMessage(messaging, (payload) => {
+onMessage(messaging, (payload) => {
   console.log("Foreground message received:", payload);
-  new Notification(payload.notification?.title, {
-    body: payload.notification?.body
-  });
+  if (payload.notification) {
+    alert(`${payload.notification.title}\n${payload.notification.body}`);
+  }
 });
+
 
 
   return (

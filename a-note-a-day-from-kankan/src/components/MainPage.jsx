@@ -150,29 +150,8 @@ const requestPermission = async () => {
 
 
 onMessage(messaging, async (payload) => {
+  // Foreground messages: do not show a system notification; background SW will handle when tab is not focused
   console.log("Foreground message received:", payload);
-  try {
-    const registration = await navigator.serviceWorker.getRegistration();
-    if (registration && registration.active) {
-      registration.active.postMessage({
-        type: 'SHOW_NOTIFICATION',
-        title: payload.data?.title || payload.notification?.title || '💌 A Note from Kankan',
-        body: payload.data?.body || payload.notification?.body || 'You have a new message!',
-        options: {
-          icon: '/vite.svg',
-          badge: '/vite.svg',
-          data: { url: window.location.origin }
-        }
-      });
-    } else if (Notification.permission === 'granted') {
-      new Notification(payload.data?.title || payload.notification?.title || '💌 A Note from Kankan', {
-        body: payload.data?.body || payload.notification?.body || 'You have a new message!',
-        icon: '/vite.svg'
-      });
-    }
-  } catch (e) {
-    console.error('Failed to show foreground notification', e);
-  }
 });
 
 

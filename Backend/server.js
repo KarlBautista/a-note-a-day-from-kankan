@@ -215,7 +215,8 @@ app.get("/tokens", async (req, res) => {
 cron.schedule(
   "0 8 * * *",
   async () => {
-    console.log("Running scheduled notification (08:00)...");
+    const now = new Date().toISOString();
+    console.log(`[CRON] Running scheduled notification (08:00). Now: ${now}. TZ: ${process.env.CRON_TZ || 'server-default'}`);
 
     const scheduledTitle = "💌 A Note from Kankan";
     const scheduledBody = "Your daily note is ready!";
@@ -259,13 +260,44 @@ cron.schedule(
         }
       }
 
-      console.log(`Daily notifications sent successfully! ${sent}/${tokenData.length}`);
+      console.log(`[CRON] Daily notifications sent successfully! ${sent}/${tokenData.length}`);
     } catch (err) {
-      console.error("Error sending daily notification:", err);
+      console.error("[CRON] Error sending daily notification:", err);
     }
   },
   { timezone: process.env.CRON_TZ || undefined }
 );
+
+// Optional: test endpoint to trigger the same logic on-demand
+app.post('/send-daily-now', async (req, res) => {
+  try {
+    const scheduledTitle = req.body?.title || "💌 A Note from Kankan";
+    const scheduledBody = req.body?.body || "Your daily note is ready!";
+
+    const { data: tokenData, error } = await supabase.from("FCM").select("*");
+    if (error) return res.status(500).json({ success: false, error });
+    if (!tokenData || tokenData.length === 0) return res.json({ success: true, sent: 0, total: 0 });
+
+    let sent = 0;
+    for (const row of tokenData) {
+      try {
+        await admin.messaging().send({
+          token: row.FCM,
+          data: { title: scheduledTitle, body: scheduledBody, click_action: "FLUTTER_NOTIFICATION_CLICK", url: FRONTEND_URL },
+          webpush: { fcmOptions: { link: FRONTEND_URL } }
+        });
+        sent++;
+      } catch (sendErr) {
+        if (sendErr.code === 'messaging/registration-token-not-registered') {
+          await supabase.from("FCM").delete().eq("FCM", row.FCM);
+        }
+      }
+    }
+    res.json({ success: true, sent, total: tokenData.length });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
 
 
 app.listen(PORT, () => {

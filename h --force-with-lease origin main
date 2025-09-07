@@ -1,0 +1,20 @@
+* [33m6c7fa1da[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Remove secrets and ignore secret files
+* [33m309b38b7[m fix bugs8
+* [33mf5e2c282[m fix bugs8
+* [33med660e39[m fix bugs7
+* [33me49d4466[m fix bugs6
+* [33m23469919[m fix some bugs5
+* [33mb8ee5cd5[m fixed bugs5
+* [33mb8a580bc[m fix bugs4
+* [33mb64533cb[m added a setTimeout in send notification
+* [33m4bcd1502[m fixed bugs3
+* [33mefab3430[m fix the send notification2
+* [33mbef1efa7[m fix the send notification
+* [33m1a8f89a2[m changed the cors endpoint
+* [33m68b3e3b2[m erased the debbugging
+* [33m5525b5ff[m added some debbuging to console
+* [33mf14561b8[m added a useEffect to register service worker
+* [33m5b9e096d[m finished deploying the backend and changing the port
+* [33m715cf9ff[m added firebase cloud messaging functionality, service workers, backend express and improved the stylings
+[31m|[m * [33mcff5e126[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m fix bugs7
+[31m|[m * [33m72155598[m fix bugs6

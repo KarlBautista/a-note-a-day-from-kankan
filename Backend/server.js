@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from "express";
 import cors from "cors";
 import { createRequire } from "module";
@@ -8,7 +9,10 @@ const serviceAccount = require("./serviceAccount.json");
 const admin = require("firebase-admin");
 
 const app = express();
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
+
+// Frontend URL for notification click-throughs
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://a-note-a-day-from-kankan.vercel.app";
 
 app.use(cors({
   origin: "*",
@@ -109,17 +113,17 @@ app.post("/send-notification", async (req, res) => {
       try {
           await admin.messaging().send({
       token: row.FCM,
-      notification: { 
-        title: title || "💌 A Note from Kankan", 
+      notification: {
+        title: title || "💌 A Note from Kankan",
         body: body || "You have a new message!"
       },
       data: {
-        click_action: "FLUTTER_NOTIFICATION_CLICK", // helps Chrome mobile
-        url: "https://your-frontend-app-url.com"
+        click_action: "FLUTTER_NOTIFICATION_CLICK",
+        url: FRONTEND_URL
       },
       webpush: {
         fcmOptions: {
-          link: "https://your-frontend-app-url.com"
+          link: FRONTEND_URL
         }
       }
 });
@@ -183,46 +187,64 @@ app.get("/tokens", async (req, res) => {
 });
 
 
-cron.schedule("58 2 * * *", async () => {
-  console.log("Running scheduled notification (2:58 AM)...");
+// Schedule a daily notification at 08:00 using server timezone or CRON_TZ env
+// Set CRON_TZ (e.g., Asia/Manila) in your environment for local time delivery
+cron.schedule(
+  "0 8 * * *",
+  async () => {
+    console.log("Running scheduled notification (08:00)...");
 
-  try {
-    const { data: tokenData, error } = await supabase.from("FCM").select("*");
-    if (error) {
-      console.error("Error fetching tokens:", error);
-      return;
+    const scheduledTitle = "💌 A Note from Kankan";
+    const scheduledBody = "Your daily note is ready!";
+
+    try {
+      const { data: tokenData, error } = await supabase.from("FCM").select("*");
+      if (error) {
+        console.error("Error fetching tokens:", error);
+        return;
+      }
+
+      if (!tokenData || tokenData.length === 0) {
+        console.log("No tokens saved, skipping notification.");
+        return;
+      }
+
+      let sent = 0;
+      for (const row of tokenData) {
+        try {
+          await admin.messaging().send({
+            token: row.FCM,
+            notification: {
+              title: scheduledTitle,
+              body: scheduledBody
+            },
+            data: {
+              click_action: "FLUTTER_NOTIFICATION_CLICK",
+              url: FRONTEND_URL
+            },
+            webpush: {
+              fcmOptions: {
+                link: FRONTEND_URL
+              }
+            }
+          });
+          sent++;
+        } catch (sendErr) {
+          console.error("❌ Failed to send scheduled to token:", row.FCM.substring(0, 20) + "...", sendErr.message);
+          if (sendErr.code === 'messaging/registration-token-not-registered') {
+            await supabase.from("FCM").delete().eq("FCM", row.FCM);
+            console.log("🗑️ Removed invalid token from database");
+          }
+        }
+      }
+
+      console.log(`Daily notifications sent successfully! ${sent}/${tokenData.length}`);
+    } catch (err) {
+      console.error("Error sending daily notification:", err);
     }
-
-    if (!tokenData || tokenData.length === 0) {
-      console.log("No tokens saved, skipping notification.");
-      return;
-    }
-
-    for (const row of tokenData) {
-      await admin.messaging().send({
-  token: row.FCM,
-  notification: { 
-    title: title || "💌 A Note from Kankan", 
-    body: body || "You have a new message!"
   },
-  data: {
-    click_action: "FLUTTER_NOTIFICATION_CLICK", // helps Chrome mobile
-    url: "https://your-frontend-app-url.com"
-  },
-  webpush: {
-    fcmOptions: {
-      link: "https://your-frontend-app-url.com"
-    }
-  }
-});
-
-    }
-
-    console.log("Daily notifications sent successfully!");
-  } catch (err) {
-    console.error("Error sending daily notification:", err);
-  }
-});
+  { timezone: process.env.CRON_TZ || undefined }
+);
 
 
 app.listen(PORT, () => {

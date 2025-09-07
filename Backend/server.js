@@ -82,36 +82,97 @@ app.post("/delete-token", async (req, res) => {
 
 // Manual notification endpoint (still works)
 app.post("/send-notification", async (req, res) => {
-  const { title, body } = req.body;
+  const { title, body, token } = req.body;
 
   try {
-    const { data: tokenData, error: tokenError } = await supabase.from("FCM").select("*");
-    if (tokenError) {
-      return res.status(500).json({ success: false, error: tokenError });
+    let tokensToSend = [];
+
+    // If specific token provided, use it. Otherwise, get all tokens
+    if (token) {
+      tokensToSend = [{ FCM: token }];
+    } else {
+      const { data: tokenData, error: tokenError } = await supabase.from("FCM").select("*");
+      if (tokenError) {
+        return res.status(500).json({ success: false, error: tokenError });
+      }
+      tokensToSend = tokenData || [];
     }
 
-    if (!tokenData || tokenData.length === 0) {
+    if (tokensToSend.length === 0) {
       return res.status(200).json({ success: false, message: "No tokens to send notifications." });
     }
 
     let successCount = 0;
+    let failedTokens = [];
 
-    for (const row of tokenData) {
+    for (const row of tokensToSend) {
       try {
         await admin.messaging().send({
-          notification: { title, body },
-          token: row.FCM
+          notification: { 
+            title: title || "💌 A Note from Kankan", 
+            body: body || "You have a new message!"
+          },
+          token: row.FCM,
+          webpush: {
+            fcmOptions: {
+              link: "https://your-vercel-app.vercel.app"
+            }
+          }
         });
         successCount++;
+        console.log("✅ Notification sent to:", row.FCM.substring(0, 20) + "...");
       } catch (sendErr) {
-        console.error("Failed to send to token:", row.FCM, sendErr);
+        console.error("❌ Failed to send to token:", row.FCM.substring(0, 20) + "...", sendErr.message);
+        failedTokens.push(row.FCM);
+        
+        // Remove invalid tokens from database
+        if (sendErr.code === 'messaging/registration-token-not-registered') {
+          await supabase.from("FCM").delete().eq("FCM", row.FCM);
+          console.log("🗑️ Removed invalid token from database");
+        }
       }
     }
 
-    console.log("Notifications successfully sent:", successCount);
-    res.json({ success: true, sent: successCount });
+    console.log(`📊 Notifications sent: ${successCount}/${tokensToSend.length}`);
+    res.json({ 
+      success: true, 
+      sent: successCount, 
+      total: tokensToSend.length,
+      failed: failedTokens.length 
+    });
   } catch (err) {
-    console.error("Unexpected error in /send-notification:", err);
+    console.error("❌ Unexpected error in /send-notification:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Test endpoint to check if backend is working
+app.get("/test", (req, res) => {
+  res.json({ 
+    success: true, 
+    message: "Backend is working!", 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development"
+  });
+});
+
+// Get all tokens (for debugging)
+app.get("/tokens", async (req, res) => {
+  try {
+    const { data: tokenData, error } = await supabase.from("FCM").select("*");
+    if (error) {
+      return res.status(500).json({ success: false, error });
+    }
+    
+    res.json({ 
+      success: true, 
+      count: tokenData?.length || 0,
+      tokens: tokenData?.map(t => ({ 
+        id: t.id, 
+        token: t.FCM.substring(0, 20) + "..." 
+      })) || []
+    });
+  } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });

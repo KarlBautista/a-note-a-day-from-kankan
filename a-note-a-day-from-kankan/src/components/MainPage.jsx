@@ -80,30 +80,67 @@ const requestPermission = async () => {
       const res = await axios.post("https://a-note-a-day-for-angila.onrender.com/save-token", { token });
       if (res.data.success) setNotificationPerm("enabled");
 
-      // Send immediate notification (for testing)
+      // Send immediate notification (for testing) with specific token
       await axios.post("https://a-note-a-day-for-angila.onrender.com/send-notification", {
         title: "Hello Ganinggg!",
-        body: "You enabled notifications! 💌"
+        body: "You enabled notifications! 💌",
+        token: token // Include the specific token
       });
 
     } catch (err) {
       console.error("Failed to get token or send notification:", err);
+      alert("Failed to setup notifications. Check console for details.");
     }
   }
 };
 
 
   const disableNotifications = async () => {
-    console.log(fcmToken)
+    console.log("🔕 Disabling notifications...", fcmToken);
     try {
-      if (!fcmToken) return; // ✅ use token from state
+      if (!fcmToken) {
+        console.error("❌ No FCM token available");
+        return;
+      }
 
       await axios.post("https://a-note-a-day-for-angila.onrender.com/delete-token", { token: fcmToken });
       setNotificationPerm("disabled");
       setFcmToken(""); // clear token
-      new Notification("You disabled the notification🥲")
+      
+      // For mobile browsers, we need to use service worker or FCM for notifications
+      // Regular browser notifications might not work on mobile
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            // Try to send through FCM first
+            await axios.post("https://a-note-a-day-for-angila.onrender.com/send-notification", {
+              title: "Notifications Disabled 🥲",
+              body: "You've disabled notifications. You can enable them again anytime!",
+              token: fcmToken
+            });
+          }
+        } catch (fcmError) {
+          console.log("FCM notification failed, trying browser notification...");
+          // Fallback to browser notification
+          if (Notification.permission === 'granted') {
+            new Notification("Notifications Disabled 🥲", {
+              body: "You've disabled notifications. You can enable them again anytime!",
+              icon: '/vite.svg'
+            });
+          }
+        }
+      } else {
+        // Desktop fallback
+        if (Notification.permission === 'granted') {
+          new Notification("Notifications Disabled 🥲", {
+            body: "You've disabled notifications. You can enable them again anytime!",
+            icon: '/vite.svg'
+          });
+        }
+      }
     } catch (err) {
-      console.error("Failed to disable notifications", err);
+      console.error("❌ Failed to disable notifications:", err);
     }
   };
 

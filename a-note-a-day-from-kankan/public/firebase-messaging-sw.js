@@ -17,11 +17,52 @@ const messaging = firebase.messaging();
 // Handle background messages
 messaging.onBackgroundMessage(function(payload) {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  const notificationTitle = payload.notification.title;
+  
+  const notificationTitle = payload.notification.title || 'New Message';
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/logo.png'
+    body: payload.notification.body || 'You have a new message',
+    icon: '/vite.svg',
+    badge: '/vite.svg',
+    tag: 'love-note',
+    requireInteraction: true,
+    actions: [
+      {
+        action: 'view',
+        title: 'View Message',
+        icon: '/vite.svg'
+      }
+    ],
+    data: {
+      url: self.location.origin
+    }
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// Handle notification clicks
+self.addEventListener('notificationclick', function(event) {
+  console.log('[firebase-messaging-sw.js] Notification clicked');
+  
+  event.notification.close();
+  
+  if (event.action === 'view' || !event.action) {
+    // Open the app
+    event.waitUntil(
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+        // If the app is already open, focus it
+        for (let i = 0; i < clientList.length; i++) {
+          const client = clientList[i];
+          if (client.url.includes(self.location.origin) && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        
+        // If the app is not open, open it
+        if (clients.openWindow) {
+          return clients.openWindow(event.notification.data.url || '/');
+        }
+      })
+    );
+  }
 });

@@ -213,7 +213,7 @@ app.get("/tokens", async (req, res) => {
 // Schedule a daily notification at 08:00 using server timezone or CRON_TZ env
 // Set CRON_TZ (e.g., Asia/Manila) in your environment for local time delivery
 cron.schedule(
-  "0 8 * * *",
+  "17 10 * * *",
   async () => {
     const now = new Date().toISOString();
     console.log(`[CRON] Running scheduled notification (08:00). Now: ${now}. TZ: ${process.env.CRON_TZ || 'server-default'}`);
